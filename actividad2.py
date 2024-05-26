@@ -1,3 +1,6 @@
+#Actividad 2 Inteligencia artificial
+#Diego Giron y Miguel Duran
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
