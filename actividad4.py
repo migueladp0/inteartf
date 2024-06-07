@@ -3,12 +3,8 @@
 
 import networkx as nx
 import matplotlib.pyplot as plt
-from ipywidgets import interact, Dropdown
 import pandas as pd
 from sklearn.cluster import KMeans
-
-# Crear el grafo de estaciones y conexiones
-G = nx.Graph()
 
 # Lista de estaciones del sistema de transporte masivo
 estaciones = [
@@ -16,6 +12,39 @@ estaciones = [
     "calle-19", "portal-sur", "portal-80", "niza-calle-127", "suba-calle-100",
     "suba-calle-95", "suba-av-boyaca", "portal-suba", "avenida-68", "américas-carrera-53"
 ]
+
+# Lista de coordenadas de las estaciones (ejemplo, reemplázalas con las coordenadas reales)
+coordenadas = {
+    "portal-norte": (10, 20),
+    "calle-100": (15, 25),
+    "calle-72": (20, 30),
+    "calle-45": (25, 35),
+    "avenida-caracas": (30, 40),
+    "calle-19": (35, 45),
+    "portal-sur": (40, 50),
+    "portal-80": (45, 55),
+    "niza-calle-127": (50, 60),
+    "suba-calle-100": (55, 65),
+    "suba-calle-95": (60, 70),
+    "suba-av-boyaca": (65, 75),
+    "portal-suba": (70, 80),
+    "avenida-68": (75, 85),
+    "américas-carrera-53": (80, 90)
+}
+
+# Convertir las coordenadas a DataFrame
+df_coord = pd.DataFrame(list(coordenadas.values()), columns=['Coord_X', 'Coord_Y'], index=coordenadas.keys())
+
+# Agrupar las estaciones en clusters utilizando K-Means
+kmeans = KMeans(n_clusters=3, random_state=42).fit(df_coord)
+df_coord['Cluster'] = kmeans.labels_
+
+# Mostrar el DataFrame con las coordenadas y los clusters asignados
+print("Coordenadas y clusters asignados a las estaciones:")
+print(df_coord)
+
+# Crear el grafo de estaciones y conexiones
+G = nx.Graph()
 
 # Lista de conexiones entre las estaciones con pesos (distancias)
 conexiones = [
@@ -48,63 +77,11 @@ conexiones = [
     ("américas-carrera-53", "avenida-68", {'weight': 7, 'distancia': '7 km'})
 ]
 
-# Agregar nodos (estaciones) al grafo
-G.add_nodes_from(estaciones)
 # Agregar aristas (conexiones) con atributos al grafo
 G.add_edges_from(conexiones)
 
-# Generar datos para el tiempo de viaje entre estaciones
-datos = []
-for conexion in conexiones:
-    estacion_origen, estacion_destino, atributos = conexion
-    tiempo_viaje = atributos['weight']  # Utilizamos el peso como tiempo de viaje
-    datos.append([estacion_origen, estacion_destino, tiempo_viaje])
-
-# Convertir los datos a un DataFrame de Pandas
-df = pd.DataFrame(datos, columns=['Estacion_Origen', 'Estacion_Destino', 'Tiempo_Viaje'])
-
-# Agrupar las estaciones en clusters utilizando K-Means
-X = df[['Tiempo_Viaje']]
-kmeans = KMeans(n_clusters=3, random_state=42).fit(X)
-df['Cluster'] = kmeans.labels_
-
-# Visualización de clusters
+# Visualización del grafo
 plt.figure(figsize=(10, 6))
-pos = nx.spring_layout(G)
-colors = ['r', 'g', 'b']
-for cluster in set(df['Cluster']):
-    nodes = df[df['Cluster'] == cluster]['Estacion_Origen'].tolist()
-    nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_color=colors[cluster], label=f'Cluster {cluster}')
-nx.draw_networkx_edges(G, pos)
-nx.draw_networkx_labels(G, pos)
-plt.legend()
+nx.draw(G, pos=coordenadas, with_labels=True, node_size=500, node_color='lightblue', font_size=10, font_weight='bold', edge_color='gray')
+plt.title("Grafo de Estaciones de Transporte Masivo")
 plt.show()
-
-# Función para predecir el tiempo de viaje entre dos estaciones
-def predecir_tiempo_viaje(estacion_origen, estacion_destino):
-    if estacion_origen not in estaciones or estacion_destino not in estaciones:
-        print("Una o ambas estaciones seleccionadas no existen en los datos.")
-        return
-
-    # Filtrar filas donde la estación de origen es igual a la estación origen seleccionada
-    filtro_origen = df['Estacion_Origen'] == estacion_origen
-    # Filtrar filas donde la estación de destino es igual a la estación destino seleccionada
-    filtro_destino = df['Estacion_Destino'] == estacion_destino
-
-    if filtro_origen.any() and filtro_destino.any():
-        cluster_origen = df.loc[filtro_origen, 'Cluster'].values[0]
-        cluster_destino = df.loc[filtro_destino, 'Cluster'].values[0]
-
-        if cluster_origen == cluster_destino:
-            tiempo_predicho = df.loc[(filtro_origen) & (filtro_destino), 'Tiempo_Viaje'].values[0]
-            print(f"Tiempo de viaje predicho de {estacion_origen} a {estacion_destino}: {tiempo_predicho:.2f} minutos")
-        else:
-            # Alternativamente podrías implementar una predicción para estaciones en diferentes clusters
-            print("Las estaciones seleccionadas no están en el mismo cluster. No se puede hacer una predicción.")
-    else:
-        print("Una o ambas estaciones seleccionadas no existen en los datos.")
-
-# Interactividad con widgets
-dropdown_inicio = Dropdown(options=estaciones, description='Punto de inicio:')
-dropdown_destino = Dropdown(options=estaciones, description='Punto de destino:')
-interact(predecir_tiempo_viaje, estacion_origen=dropdown_inicio, estacion_destino=dropdown_destino);
