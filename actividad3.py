@@ -1,3 +1,6 @@
+# Actividad 2 - Búsqueda y sistemas basados en reglas
+# Miguel Angel Duran Penagos y Diego Fabian Giron Acosta
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from ipywidgets import interact, Dropdown
